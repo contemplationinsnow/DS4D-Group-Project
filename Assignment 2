@@ -1,0 +1,110 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+import warnings
+warnings.filterwarnings("ignore")
+demographic_data = pd.read_csv('C:\Code\Python\data\data1.csv')
+emergency_data = pd.read_csv('C:\Code\Python\data\data3.csv')
+place_data = pd.read_csv('C:\Code\Python\data\data6.csv')
+
+demographic_data.head()
+demographic_data.info()
+demographic_data['Number of deaths'] = demographic_data['Number of deaths'].map(lambda x: x.replace(',', ''))
+demographic_data['Total number of deaths with this underlying cause of death'] = demographic_data['Total number of deaths with this underlying cause of death'].map(lambda x: x.replace(',', ''))
+demographic_data['Total number of deaths in this demographic group'] = demographic_data['Total number of deaths in this demographic group'].map(lambda x: x.replace(',', ''))
+demographic_data['Number of deaths'] = demographic_data['Number of deaths'].astype(np.int64)
+demographic_data['Total number of deaths with this underlying cause of death'] = demographic_data['Total number of deaths with this underlying cause of death'].astype(np.int64)
+demographic_data['Total number of deaths in this demographic group'] = demographic_data['Total number of deaths in this demographic group'].astype(np.int64)
+demographic_data.describe()
+
+emergency_data.head()
+emergency_data.info()
+emergency_data=emergency_data.dropna(axis=0, subset=["Number of deaths"])
+emergency_data.info()
+emergency_data['Number of deaths'] = emergency_data['Number of deaths'].map(lambda x: x.replace(',', ''))
+emergency_data['Total emergency admissions in last 3 months of life'] = emergency_data['Total emergency admissions in last 3 months of life'].map(lambda x: x.replace(',', ''))
+emergency_data['Number of people with at least emergency hospital admission in last 3 month of life'] = emergency_data['Number of people with at least emergency hospital admission in last 3 month of life'].map(lambda x: x.replace(',', ''))
+emergency_data['Number of people with at least 3 emergency hospital admissions in last 3 month of life'] = emergency_data['Number of people with at least 3 emergency hospital admissions in last 3 month of life'].map(lambda x: x.replace(',', ''))
+emergency_data['Number of deaths'] = pd.to_numeric(emergency_data['Number of deaths'])
+emergency_data['Total emergency admissions in last 3 months of life'] = pd.to_numeric(emergency_data['Total emergency admissions in last 3 months of life'])
+emergency_data['Number of people with at least emergency hospital admission in last 3 month of life'] = pd.to_numeric(emergency_data['Number of people with at least emergency hospital admission in last 3 month of life'])
+emergency_data['Number of people with at least 3 emergency hospital admissions in last 3 month of life'] = pd.to_numeric(emergency_data['Number of people with at least 3 emergency hospital admissions in last 3 month of life'])
+emergency_data.describe()
+
+place_data.head()
+place_data.info()
+place_data['Number of death'] = place_data['Number of death'].map(lambda x: x.replace(',', ''))
+place_data['Number of death'] = pd.to_numeric(place_data['Number of death'])
+place_data.describe()
+
+# In visualisation chart 1, I will examine the percentage of deceased people in different demographic categories for the 5 broad underlying causes of death. Explore whether deprivation, age, ethnic group and sex have an effect on the mortality rate of patients with the 5 underlying causes of death.
+demographic_data=demographic_data.loc[demographic_data['Narrow underlying cause of death']=='All']
+causeList = demographic_data['Broad underlying cause of death'].unique().tolist()
+causeList.remove("All")
+print(causeList)
+DemographicList = demographic_data['Demographic category'].unique().tolist()
+DemographicList.remove("All")
+# Visualisation
+fig, axs = plt.subplots(len(causeList), len(DemographicList),figsize=(20, 20))
+for c in causeList:
+    cause_data = demographic_data.loc[demographic_data['Broad underlying cause of death'] == c]
+    for d in DemographicList:
+        dfDemographic = cause_data.loc[cause_data['Demographic category'] == d]
+        # Select the column of data to be plotted
+        labels = dfDemographic['Demographic group']
+        axs[causeList.index(c), DemographicList.index(d)].pie(dfDemographic['Number of deaths as percentage deaths of deaths with this underlying cause of death'],  labels=labels, pctdistance=0.9)
+        axs[causeList.index(c), DemographicList.index(d)].axis('equal')  # 保持纵横比相等
+        axs[causeList.index(c), DemographicList.index(d)].set_title(d)
+plt.show()
+
+# In visualisation chart 2, I will examine the relationship between broad underlying causes of death and the average emergency admissions in the last 3 months of life
+emergency_data = emergency_data.loc[emergency_data['Narrow underlying cause of death'] == 'All'][1:]
+# different place
+causeList = emergency_data['Broad underlying cause of death'].unique().tolist()
+emergency_data['Number of people with 1 or 2 emergency hospital admissions in last 3 month of life']=emergency_data['Number of people with at least emergency hospital admission in last 3 month of life']-emergency_data['Number of people with at least 3 emergency hospital admissions in last 3 month of life']
+data1=emergency_data['Number of people with 1 or 2 emergency hospital admissions in last 3 month of life']
+data2=emergency_data['Number of people with at least 3 emergency hospital admissions in last 3 month of life']
+# Set the graphic size
+plt.figure(figsize=(10, 6))
+# Width of bar
+bar_width = 0.35
+# Position of the x-axis
+x = range(len(causeList))
+# Drawing the bars of P1or2
+plt.bar(x, data1, bar_width, label='1or2', align='center')
+# Drawing P3ormore's Bars
+plt.bar([i + bar_width for i in x],data2 , bar_width, label='3orMore', align='center')
+# Setting the x-axis labels
+plt.xticks([i + bar_width/2 for i in x], causeList)
+# Add legend
+plt.legend()
+# Setting up titles and labels
+plt.title('The relationship between Broad underlying cause of death and  Average emergency admissions in last 3 months of life')
+plt.xlabel('Broad underlying cause of death')
+plt.ylabel('Number of death')
+# Display graphics
+plt.show()
+
+# In visualisation chart 3, I will examine the relationship between broad underlying causes of death and place of death.
+place_data = place_data.loc[place_data['Narrow underlying cause of death'] == 'All']
+# Different place
+causeList = place_data['Broad underlying cause of death'].unique().tolist()
+causeList.remove("All")
+PlaceList = place_data['Place of death'].unique().tolist()
+plt.figure(figsize=(10, 6))
+print(PlaceList)
+# Visualisation
+x = np.arange(len(PlaceList))
+# Setting the x-axis labels
+plt.xticks(x, PlaceList)
+# Setting the y-axis labels
+plt.ylabel('Number of death')
+for c in causeList:
+    dfVis = place_data.loc[place_data['Broad underlying cause of death'] == c]
+    # Create side-by-side line charts
+    plt.plot(x, dfVis['Number of death'], marker='o', label=c, linestyle='-')
+# Setup legend
+plt.legend()
+# Setting the title
+plt.title('The relationship between Broad underlying cause of death and Place of death')
+plt.show()
